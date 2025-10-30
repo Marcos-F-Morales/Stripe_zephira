@@ -29,23 +29,36 @@ class Server {
   }
 
   configureMiddlewares() {
-    this.app.use(cors({
-      origin: API_GATEWAY_URL,
-      credentials: true,
-    }));
+    this.app.use(
+      cors({
+        origin: [
+          process.env.FRONTEND_URL,
+          process.env.API_GATEWAY_URL,
+          "https://zephira.online",
+        ],
+        credentials: true,
+      })
+    );
     this.app.use(bodyParser.urlencoded({ extended: true }));
   }
 
   configureRoutes() {
     new StripeRoute(this.app);
+
+    // Ruta de prueba
+    this.app.get("/", (req, res) => {
+      res.json({
+        message: "✅ Stripe Service en funcionamiento",
+        version: "1.0.0",
+      });
+    });
   }
 
   async connectDatabase() {
     try {
+      await db.sequelize.authenticate();
       await db.sequelize.sync({ alter: true });
       console.log("✅ Base de datos conectada y sincronizada.");
-      const tables = await db.sequelize.getQueryInterface().showAllTables();
-      console.log("📦 Tablas:", tables);
     } catch (error) {
       console.error("❌ Error al conectar con la base de datos:", error);
     }
